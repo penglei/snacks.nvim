@@ -396,11 +396,16 @@ function M.hover()
     }
     vim.api.nvim_create_autocmd({ "BufWritePost", "CursorMoved", "ModeChanged", "BufLeave" }, {
       group = vim.api.nvim_create_augroup("snacks.image.hover", { clear = true }),
-      callback = function()
+      callback = function(opts)
         if not hover then
           return true
         end
-        M.hover()
+        local mode_char = vim.fn.mode():sub(1, 1)
+        if mode_char == "i" then
+          M.hover_close()
+        else
+          M.hover()
+        end
         if not hover then
           return true
         end
