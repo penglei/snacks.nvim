@@ -45,7 +45,7 @@ M.meta = {
 --- Resolves a reference to an image with src in a file (currently markdown only).
 --- Return the absolute path or url to the image.
 --- When `nil`, the path is resolved relative to the file.
----@field resolve? fun(file: string, src: string): string?
+---@field resolve? fun(file: string, src: string): {src: string, key: string, params: {}}|string
 ---@field convert? snacks.image.convert.Config
 local defaults = {
   formats = {

@@ -27,6 +27,7 @@ local M = {}
 ---@field range? Range4
 ---@field lang string
 ---@field type snacks.image.Type
+---@field params? {}
 
 local META_EXT = "image.ext"
 local META_SRC = "image.src"
@@ -163,7 +164,12 @@ function M.resolve(buf, src)
   local file = svim.fs.normalize(vim.api.nvim_buf_get_name(buf))
   local s = Snacks.image.config.resolve and Snacks.image.config.resolve(file, src) or nil
   if s then
-    return s
+    local vt = type(s)
+    if vt == "string" then
+      return s, {}
+    elseif vt == "table" then
+      return s.src, s.params or {}
+    end
   end
   if not src:find("^%w%w+://") then
     local cwd = uv.cwd() or "."
@@ -185,7 +191,7 @@ function M.resolve(buf, src)
     end
     src = svim.fs.normalize(src)
   end
-  return src
+  return src, {}
 end
 
 ---@param buf number
@@ -296,7 +302,7 @@ function M._img(ctx)
     transform(img, ctx)
   end
   if img.src then
-    img.src = M.resolve(ctx.buf, img.src)
+    img.src, img.params = M.resolve(ctx.buf, img.src)
   end
   if img.content and not img.src then
     local root = Snacks.image.config.cache
@@ -320,7 +326,7 @@ function M.hover_close()
 end
 
 --- Get the image at the cursor (if any)
----@param cb fun(image_src?:string, image_pos?: snacks.image.Pos)
+---@param cb fun(img?: snacks.image.match)
 function M.at_cursor(cb)
   local cursor = vim.api.nvim_win_get_cursor(0)
   M.find(vim.api.nvim_get_current_buf(), function(imgs)
@@ -331,7 +337,7 @@ function M.at_cursor(cb)
           (range[1] == range[3] and cursor[2] >= range[2] and cursor[2] <= range[4])
           or (range[1] ~= range[3] and cursor[1] >= range[1] and cursor[1] <= range[3])
         then
-          return cb(img.src, img.pos)
+          return cb(img)
         end
       end
     end
@@ -351,10 +357,12 @@ function M.hover()
     M.hover_close()
   end
 
-  M.at_cursor(function(src)
-    if not src then
+  M.at_cursor(function(img)
+    if not img or not img.src then
       return M.hover_close()
     end
+    local src = img.src
+    local params = img.params
 
     if hover and hover.img.img.src ~= src then
       M.hover_close()
@@ -384,7 +392,7 @@ function M.hover()
     hover = {
       win = win,
       buf = current_buf,
-      img = Snacks.image.placement.new(win.buf, src, o),
+      img = Snacks.image.placement.new(win.buf, src, params, o),
     }
     vim.api.nvim_create_autocmd({ "BufWritePost", "CursorMoved", "ModeChanged", "BufLeave" }, {
       group = vim.api.nvim_create_augroup("snacks.image.hover", { clear = true }),

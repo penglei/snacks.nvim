@@ -12,11 +12,13 @@ local uv = vim.uv or vim.loop
 
 ---@class snacks.image.convert.Opts
 ---@field src string
+---@field params {}
 ---@field on_done? fun(convert: snacks.image.Convert)
 
 ---@class snacks.image.meta
 ---@field src string
 ---@field info? snacks.image.Info
+---@field params {}
 ---@field [string] string|number|boolean
 
 ---@alias snacks.image.args (number|string)[] | fun(): ((number|string)[])
@@ -175,6 +177,7 @@ local commands = {
       ---@cast args (string|number)[]
 
       vim.list_extend(args, { "-write", "{file}", "-identify", "-format", "%m %[fx:w]x%[fx:h] %xx%y", "{file}.info" })
+
       return {
         { cmd = "magick", args = args },
         not Snacks.util.is_win and { cmd = "convert", args = args } or nil,
@@ -245,8 +248,12 @@ function Convert.new(opts)
   if M.is_uri(self.opts.src) then
     base = self.opts.src:gsub("%?.*", ""):match("^%w%w+://(.*)$") or base
   end
-  self.prefix = vim.fn.sha256(self.opts.src):sub(1, 8) .. "-" .. base:gsub("[^%w%.]+", "-")
-  self.meta = { src = opts.src }
+  local src_key = opts.params.key or self.opts.src
+  self.prefix = vim.fn.sha256(src_key):sub(1, 8) .. "-" .. base:gsub("[^%w%.]+", "-")
+  self.meta = {
+    src = opts.src,
+    params = opts.params,
+  }
   self.steps = {}
   self.tpl_data = {
     cache = Snacks.image.config.cache,
@@ -407,11 +414,14 @@ function Convert:step()
     name = vim.fn.fnamemodify(step.file, ":t:r"),
     dirname = vim.fs.dirname(step.meta.src),
     src = step.meta.src,
+    params = step.meta.params,
   }, self.tpl_data)
 
   for a, arg in ipairs(args) do
     if type(arg) == "string" then
       args[a] = Snacks.picker.util.tpl(arg, data)
+    elseif type(arg) == "function" then
+      args[a] = arg(data)
     end
   end
 
