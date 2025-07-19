@@ -1,5 +1,6 @@
 ---@class snacks.Image
 ---@field src string
+---@field params {}
 ---@field file string
 ---@field id number image id. unique per nvim instance and file
 ---@field sent? boolean image data is sent
@@ -47,9 +48,10 @@ local function use(img)
 end
 
 ---@param src string
-function M.new(src)
+function M.new(src, params)
   local self = setmetatable({}, M)
   self.src = src
+  self.params = params
   self.file = self:convert()
   if images[self.file] then
     return images[self.file]
@@ -120,6 +122,7 @@ end
 function M:convert()
   self._convert = Snacks.image.convert.convert({
     src = self.src,
+    params = self.params,
     on_done = function(convert)
       if convert:error() then
         vim.schedule(function()

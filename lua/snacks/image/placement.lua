@@ -48,13 +48,13 @@ end
 
 ---@param buf number
 ---@param opts? snacks.image.Opts
-function M.new(buf, src, opts)
+function M.new(buf, src, params, opts)
   assert(type(buf) == "number", "`Image.new`: buf should be a number")
   assert(type(src) == "string", "`Image.new`: src should be a string")
   Snacks.image.setup() -- always setup so that images/videos can be opened
   local self = setmetatable({}, M)
 
-  self.img = Snacks.image.image.new(src)
+  self.img = Snacks.image.image.new(src, params)
   self.img:place(self)
   self.opts = opts or {}
   self.opts.pos = self.opts.pos or { 1, 0 }
