@@ -275,6 +275,7 @@ function M._img(ctx)
   local img = {
     ext = ctx.meta[META_EXT],
     src = ctx.meta[META_SRC],
+    params = {},
     lang = ctx.lang,
     id = ctx.pos.node:id(),
     range = { range[1] + 1, range[2], range[3] + 1, range[4] },
