@@ -1,5 +1,7 @@
 ---@class snacks.image.doc
-local M = {}
+local M = {
+  state = true,
+}
 
 ---@alias TSMatch {node:TSNode, meta:vim.treesitter.query.TSMetadata}
 ---@alias snacks.image.transform fun(match: snacks.image.match, ctx: snacks.image.ctx)
@@ -377,6 +379,11 @@ function M.hover()
   local current_win = vim.api.nvim_get_current_win()
   local current_buf = vim.api.nvim_get_current_buf()
 
+  if not M.state then
+    M.hover_close()
+    return
+  end
+
   if hover and hover.win.win == current_win and hover.win:valid() then
     return
   end
@@ -485,6 +492,14 @@ function M.attach(buf)
   Terminal.detect(function()
     M._attach(buf)
   end)
+end
+
+function M.disable()
+  M.state = false
+end
+
+function M.enable()
+  M.state = true
 end
 
 return M
